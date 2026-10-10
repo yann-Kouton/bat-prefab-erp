@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminAuth, adminDb, HttpError, requireUser, route } from './_lib/admin';
 
-const ROLES = ['admin', 'direction', 'commercial', 'chef_chantier', 'comptable'];
+const ROLES = ['admin', 'direction', 'commercial', 'chef_chantier', 'comptable', 'magasinier'];
 const COUNTRIES = ['CI', 'TG', 'BF', 'CM'];
 
 /** Crée un compte Firebase Auth + son profil Firestore. Réservé aux administrateurs. */

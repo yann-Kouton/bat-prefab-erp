@@ -10,15 +10,16 @@ import { formatDate, formatMoney, formatNumber, toDate } from '@/lib/format';
 import { QUOTE_TONES } from '@/lib/tones';
 import { lineTotal } from '@/features/quotes/calc';
 import { shareQuotePdf } from '@/features/quotes/pdf';
-import { createDocument, nextNumber, removeDocument, updateDocument, useDocument } from '@/services/firestore';
+import { createDocument, nextNumber, removeDocument, updateDocument, useCollection, useDocument } from '@/services/firestore';
 import { colors, font, spacing } from '@/theme';
-import type { Quote, QuoteStatus } from '@/types';
+import type { Invoice, Quote, QuoteStatus } from '@/types';
 
 export default function QuoteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { can } = useAuth();
   const { data: quote, loading } = useDocument<Quote>('quotes', id);
   const [busy, setBusy] = useState<string | null>(null);
+  const { data: invoices } = useCollection<Invoice>('invoices', { where: ['quoteId', '==', id ?? ''], enabled: can('invoices.read') && !!id });
 
   if (loading) return <Screen title="Devis" back><Loading /></Screen>;
   if (!quote) {
@@ -30,7 +31,8 @@ export default function QuoteDetail() {
   }
 
   const canWrite = can('quotes.write');
-  const locked = !!quote.projectId;
+  const hasInvoices = invoices.some((i) => i.status !== 'annulee');
+  const locked = !!quote.projectId || hasInvoices; // devis figé dès qu'un projet ou une facture en dépend
 
   async function run(key: string, fn: () => Promise<void>) {
     setBusy(key);
@@ -149,6 +151,9 @@ export default function QuoteDetail() {
           ) : null}
           {quote.status === 'accepte' && !quote.projectId && can('projects.write') ? (
             <Button label="Créer le projet" icon="construct-outline" variant="accent" onPress={createProject} loading={busy === 'project'} />
+          ) : null}
+          {quote.status === 'accepte' && can('invoices.write') ? (
+            <Button label="Créer une facture" icon="cash-outline" variant="accent" onPress={() => router.push(`/invoices/new?quoteId=${quote.id}`)} />
           ) : null}
           {quote.projectId ? (
             <Button label="Voir le projet" icon="construct-outline" variant="secondary" onPress={() => router.push(`/projects/${quote.projectId}`)} />

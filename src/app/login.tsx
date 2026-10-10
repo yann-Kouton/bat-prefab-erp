@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authErrorMessage, useAuth } from '@/auth/AuthContext';
-import { BrandMark } from '@/components/BrandMark';
+import { Logo } from '@/components/Logo';
 import { Button, Field } from '@/components/ui';
 import { COMPANY } from '@/lib/constants';
 import { notify } from '@/lib/dialogs';
@@ -50,17 +50,16 @@ export default function LoginScreen() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <View style={styles.brand}>
-              <BrandMark size={64} />
-              <Text style={styles.name}>{COMPANY.name}</Text>
-              <Text style={styles.tagline}>Gestion des devis, clients et chantiers</Text>
+              <Logo width={240} />
+              <Text style={styles.title}>{COMPANY.appSubtitle}</Text>
+              <View style={styles.rule} />
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Connexion</Text>
+            <View style={styles.form}>
               <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" />
               <Field label="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="password" onSubmitEditing={submit} />
               {error ? <Text style={styles.error}>{error}</Text> : null}
-              <Button label="Se connecter" variant="accent" onPress={submit} loading={loading} />
+              <Button label="Se connecter" onPress={submit} loading={loading} />
               <Pressable onPress={forgot} accessibilityRole="button" style={styles.forgot}>
                 <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
               </Pressable>
@@ -73,14 +72,13 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.steel },
+  root: { flex: 1, backgroundColor: colors.surface },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl, maxWidth: 520, width: '100%', alignSelf: 'center' },
   brand: { alignItems: 'center', marginBottom: spacing.xl },
-  name: { ...font.title, fontSize: 24, color: '#FFFFFF', marginTop: spacing.md },
-  tagline: { ...font.body, color: '#B8C4CE', marginTop: 4, textAlign: 'center' },
-  card: { backgroundColor: colors.surface, borderRadius: radius.card, padding: spacing.xl },
-  cardTitle: { ...font.title, color: colors.text, marginBottom: spacing.lg },
+  title: { ...font.display, color: colors.brand, marginTop: spacing.lg, textAlign: 'center' },
+  rule: { width: 48, height: 4, borderRadius: 2, backgroundColor: colors.gold, marginTop: spacing.md },
+  form: { backgroundColor: colors.canvas, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.xl },
   error: { ...font.small, color: colors.danger, marginBottom: spacing.md },
   forgot: { alignSelf: 'center', paddingVertical: spacing.md, marginTop: spacing.sm },
-  forgotText: { ...font.small, fontWeight: '600', color: colors.steel },
+  forgotText: { ...font.small, fontWeight: '600', color: colors.brand },
 });

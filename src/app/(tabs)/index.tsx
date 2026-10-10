@@ -9,7 +9,9 @@ import { formatDate, formatMoney, toDate } from '@/lib/format';
 import { PROJECT_TONES, QUOTE_TONES } from '@/lib/tones';
 import { useCollection } from '@/services/firestore';
 import { colors, font, radius, spacing } from '@/theme';
-import type { Client, Project, Quote } from '@/types';
+import { payState, remaining } from '@/services/billing';
+import { isLow } from '@/features/stock/utils';
+import type { Client, Invoice, Product, Project, Quote } from '@/types';
 
 function greeting() {
   const h = new Date().getHours();
@@ -22,6 +24,10 @@ export default function Dashboard() {
   const { data: quotes } = useCollection<Quote>('quotes', { enabled: canQuotes });
   const { data: projects } = useCollection<Project>('projects');
   const { data: clients } = useCollection<Client>('clients');
+  const canInvoices = can('invoices.read');
+  const canStock = can('stock.read');
+  const { data: invoices } = useCollection<Invoice>('invoices', { enabled: canInvoices });
+  const { data: products } = useCollection<Product>('products', { enabled: canStock, orderField: null });
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -31,7 +37,13 @@ export default function Dashboard() {
       return q.status === 'accepte' && d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
     const running = projects.filter((p) => p.status === 'en_cours');
+    const open = invoices.filter((i) => ['a_payer', 'partielle', 'en_retard'].includes(payState(i)));
+    const late = invoices.filter((i) => payState(i) === 'en_retard');
     return {
+      outstanding: open.reduce((s, i) => s + remaining(i), 0),
+      lateCount: late.length,
+      lateAmount: late.reduce((s, i) => s + remaining(i), 0),
+      lowStock: products.filter(isLow).length,
       pendingCount: pending.length,
       pendingAmount: pending.reduce((s, q) => s + q.totalTTC, 0),
       acceptedAmount: acceptedThisMonth.reduce((s, q) => s + q.totalTTC, 0),
@@ -41,7 +53,7 @@ export default function Dashboard() {
       clientCount: clients.filter((c) => c.status === 'client').length,
       prospectCount: clients.filter((c) => c.status === 'prospect').length,
     };
-  }, [quotes, projects, clients]);
+  }, [quotes, projects, clients, invoices, products]);
 
   const firstName = profile?.displayName?.split(' ')[0] ?? '';
   const recentQuotes = quotes.slice(0, 3);
@@ -55,6 +67,12 @@ export default function Dashboard() {
             <Stat icon="paper-plane-outline" label="Devis en attente" value={String(stats.pendingCount)} detail={formatMoney(stats.pendingAmount)} />
             <Stat icon="checkmark-done-outline" label="Acceptés ce mois" value={String(stats.acceptedCount)} detail={formatMoney(stats.acceptedAmount)} />
           </>
+        ) : null}
+        {canInvoices ? (
+          <Stat icon="cash-outline" label="À encaisser" value={formatMoney(stats.outstanding).replace(' FCFA', '')} detail={stats.lateCount > 0 ? `${stats.lateCount} en retard · ${formatMoney(stats.lateAmount)}` : 'Aucun retard'} />
+        ) : null}
+        {canStock ? (
+          <Stat icon="cube-outline" label="Stock bas" value={String(stats.lowStock)} detail={stats.lowStock > 0 ? 'article(s) à réapprovisionner' : 'Tout est au-dessus du seuil'} />
         ) : null}
         <Stat icon="construct-outline" label="Projets en cours" value={String(stats.runningCount)} detail={canQuotes ? formatMoney(stats.runningBudget) : undefined} />
         <Stat icon="people-outline" label="Clients" value={String(stats.clientCount)} detail={`${stats.prospectCount} prospect${stats.prospectCount > 1 ? 's' : ''}`} />
@@ -102,7 +120,7 @@ export default function Dashboard() {
 function Stat({ icon, label, value, detail }: { icon: IconName; label: string; value: string; detail?: string }) {
   return (
     <View style={styles.stat}>
-      <View style={styles.statIcon}><Ionicons name={icon} size={18} color={colors.steel} /></View>
+      <View style={styles.statIcon}><Ionicons name={icon} size={18} color={colors.brand} /></View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
       {detail ? <Text style={styles.statDetail} numberOfLines={1}>{detail}</Text> : null}
@@ -113,7 +131,7 @@ function Stat({ icon, label, value, detail }: { icon: IconName; label: string; v
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: spacing.md },
   stat: { flexGrow: 1, flexBasis: '45%', backgroundColor: colors.surface, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.lg },
-  statIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.machine, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  statIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   statValue: { fontSize: 28, fontWeight: '800', color: colors.text },
   statLabel: { ...font.small, color: colors.muted, marginTop: 2 },
   statDetail: { ...font.small, fontWeight: '600', color: colors.text, marginTop: 6 },

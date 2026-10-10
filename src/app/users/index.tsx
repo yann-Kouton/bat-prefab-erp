@@ -1,12 +1,12 @@
 import { FlatList, StyleSheet, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
-import { Badge, Card, EmptyState, Fab, Loading, Screen } from '@/components/ui';
-import { COUNTRIES, ROLE_LABELS } from '@/lib/constants';
-import { errorMessage, notify } from '@/lib/dialogs';
+import { Badge, Card, Chips, EmptyState, Fab, Loading, Screen } from '@/components/ui';
+import { COUNTRIES, ROLE_LABELS, ROLE_OPTIONS } from '@/lib/constants';
+import { confirmAction, errorMessage, notify } from '@/lib/dialogs';
 import { updateDocument, useCollection } from '@/services/firestore';
 import { colors, font, spacing } from '@/theme';
-import type { UserProfile } from '@/types';
+import type { Role, UserProfile } from '@/types';
 
 export default function UsersScreen() {
   const { can, user } = useAuth();
@@ -31,6 +31,13 @@ export default function UsersScreen() {
     }
   }
 
+  function changeRole(u: UserProfile & { id: string }, role: Role) {
+    if (role === u.role) return;
+    confirmAction('Changer le rôle ?', `${u.displayName} passera de « ${ROLE_LABELS[u.role]} » à « ${ROLE_LABELS[role]} ». Ses droits changent immédiatement.`, 'Confirmer', async () => {
+      try { await updateDocument('users', u.id, { role }); } catch (e) { notify('Mise à jour impossible', errorMessage(e)); }
+    });
+  }
+
   return (
     <Screen title="Utilisateurs" subtitle={`${users.length} compte${users.length > 1 ? 's' : ''}`} back scroll={false} padded={false}>
       {loading ? (
@@ -51,7 +58,7 @@ export default function UsersScreen() {
                   value={item.active}
                   disabled={item.id === user?.uid}
                   onValueChange={(v) => toggle(item, v)}
-                  trackColor={{ true: colors.steel, false: colors.border }}
+                  trackColor={{ true: colors.brand, false: colors.border }}
                   accessibilityLabel={`Compte actif : ${item.displayName}`}
                 />
               </View>
@@ -60,6 +67,11 @@ export default function UsersScreen() {
                 <Text style={styles.sub}>{COUNTRIES[item.country]?.label}</Text>
                 {!item.active ? <Badge label="Désactivé" tone="danger" /> : null}
               </View>
+              {item.id !== user?.uid ? (
+                <View style={{ marginTop: spacing.md }}>
+                  <Chips<Role> scroll options={ROLE_OPTIONS} value={item.role} onChange={(r) => changeRole(item, r)} />
+                </View>
+              ) : null}
             </Card>
           )}
         />

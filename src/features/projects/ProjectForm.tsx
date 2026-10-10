@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useAuth } from '@/auth/AuthContext';
 import { ClientPicker } from '@/components/ClientPicker';
 import { Button, Chips, Field, Screen } from '@/components/ui';
+import { DateField } from '@/components/DateField';
 import {
   COUNTRIES, COUNTRY_OPTIONS, PROJECT_STATUS_OPTIONS, PROJECT_TYPE_OPTIONS,
 } from '@/lib/constants';
@@ -95,10 +96,10 @@ export function ProjectForm({ project }: { project?: Project }) {
       <Field label="Budget (FCFA)" value={budget} onChangeText={setBudget} keyboardType="decimal-pad" error={errors.budget} />
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1 }}>
-          <Field label="Début" value={startDate} onChangeText={setStartDate} placeholder="AAAA-MM-JJ" error={errors.startDate} autoCapitalize="none" />
+          <DateField label="Début" value={startDate} onChange={setStartDate} error={errors.startDate} optional />
         </View>
         <View style={{ flex: 1 }}>
-          <Field label="Fin prévue" value={endDate} onChangeText={setEndDate} placeholder="AAAA-MM-JJ" error={errors.endDate} autoCapitalize="none" />
+          <DateField label="Fin prévue" value={endDate} onChange={setEndDate} error={errors.endDate} optional />
         </View>
       </View>
       <Field label="Responsable de chantier" value={managerName} onChangeText={setManagerName} autoCapitalize="words" />

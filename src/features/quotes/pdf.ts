@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { COMPANY, COUNTRIES } from '@/lib/constants';
+import { LOGO_DATA_URI } from '@/lib/logoData';
 import { formatDate, formatMoney, formatNumber, toDate } from '@/lib/format';
 import { lineTotal } from '@/features/quotes/calc';
 import type { Quote } from '@/types';
@@ -33,38 +34,34 @@ export function buildQuoteHtml(quote: Quote): string {
 <style>
   @page { margin: 18mm 14mm; }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #17212B; font-size: 12px; line-height: 1.45; }
-  .top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #F5B800; padding-bottom: 12px; }
-  .brand img { height: 54px; }
-  .brand h1 { margin: 6px 0 0; font-size: 18px; color: #22313F; }
-  .brand p { margin: 2px 0 0; color: #66737F; }
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #12233F; font-size: 12px; line-height: 1.45; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #F8B608; padding-bottom: 12px; }
+  .brand img { height: 72px; }
   .doc { text-align: right; }
-  .doc h2 { margin: 0; font-size: 22px; color: #22313F; }
-  .doc p { margin: 3px 0 0; color: #66737F; }
+  .doc h2 { margin: 0; font-size: 22px; color: #0B66E4; font-family: Georgia, 'Times New Roman', serif; }
+  .doc p { margin: 3px 0 0; color: #5C6B82; }
   .parties { display: flex; gap: 16px; margin: 18px 0; }
-  .box { flex: 1; border: 1px solid #D5DBE0; border-radius: 6px; padding: 10px 12px; }
-  .box h3 { margin: 0 0 6px; font-size: 11px; color: #66737F; font-weight: 600; }
+  .box { flex: 1; border: 1px solid #D7DFEA; border-radius: 6px; padding: 10px 12px; }
+  .box h3 { margin: 0 0 6px; font-size: 11px; color: #5C6B82; font-weight: 600; }
   .box strong { font-size: 13px; }
   .subject { margin: 0 0 12px; font-size: 14px; }
   table { width: 100%; border-collapse: collapse; }
-  th { background: #22313F; color: #fff; text-align: left; padding: 7px 8px; font-size: 11px; }
-  td { border-bottom: 1px solid #E3E7EA; padding: 7px 8px; vertical-align: top; }
+  th { background: #0B66E4; color: #fff; text-align: left; padding: 7px 8px; font-size: 11px; }
+  td { border-bottom: 1px solid #E4E9F1; padding: 7px 8px; vertical-align: top; }
   .c { text-align: center; } .r { text-align: right; white-space: nowrap; }
   .totals { margin: 14px 0 0 auto; width: 55%; }
   .totals td { border: 0; padding: 4px 8px; }
-  .totals .grand td { background: #FFF3C4; font-weight: 700; font-size: 14px; border-top: 2px solid #22313F; }
+  .totals .grand td { background: #FFF1C2; font-weight: 700; font-size: 14px; border-top: 2px solid #0B66E4; }
   .notes { margin-top: 18px; }
   .notes h3 { margin: 0 0 4px; font-size: 12px; }
   .sign { display: flex; gap: 16px; margin-top: 26px; }
-  .sign div { flex: 1; border: 1px solid #D5DBE0; border-radius: 6px; padding: 10px 12px; height: 90px; color: #66737F; }
-  .foot { margin-top: 22px; padding-top: 8px; border-top: 1px solid #D5DBE0; color: #66737F; font-size: 10px; text-align: center; }
+  .sign div { flex: 1; border: 1px solid #D7DFEA; border-radius: 6px; padding: 10px 12px; height: 90px; color: #5C6B82; }
+  .foot { margin-top: 22px; padding-top: 8px; border-top: 1px solid #D7DFEA; color: #5C6B82; font-size: 10px; text-align: center; }
 </style></head>
 <body>
   <div class="top">
     <div class="brand">
-      <img src="${COMPANY.logoUrl}" alt="${esc(COMPANY.name)}"/>
-      <h1>${esc(COMPANY.name)}</h1>
-      <p>${esc(COMPANY.tagline)}</p>
+      <img src="${LOGO_DATA_URI}" alt="${esc(COMPANY.name)}"/>
     </div>
     <div class="doc">
       <h2>Devis ${esc(quote.number)}</h2>

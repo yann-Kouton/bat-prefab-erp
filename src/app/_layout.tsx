@@ -4,7 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
-import { BrandMark } from '@/components/BrandMark';
+import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui';
 import { colors, font, spacing } from '@/theme';
 
@@ -13,6 +13,7 @@ function Gate() {
   const segments = useSegments();
   const router = useRouter();
   const onLogin = segments[0] === 'login';
+  const blocked = !loading && !!user && !profile?.active;
 
   useEffect(() => {
     if (loading) return;
@@ -22,20 +23,22 @@ function Gate() {
 
   return (
     <>
+      {/* Écrans blancs (connexion, chargement) : icônes sombres ; sinon en-tête bleu : icônes claires */}
+      <StatusBar style={loading || blocked || onLogin ? 'dark' : 'light'} />
       <Stack screenOptions={{ headerShown: false }} />
       {loading ? (
         <View style={styles.overlay}>
-          <BrandMark size={72} />
-          <ActivityIndicator color={colors.machine} style={{ marginTop: spacing.xl }} />
+          <Logo width={240} />
+          <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.xl }} />
         </View>
-      ) : user && !profile?.active ? (
+      ) : blocked ? (
         <View style={styles.overlay}>
-          <BrandMark size={72} />
+          <Logo width={200} />
           <Text style={styles.blockedTitle}>Compte en attente d'activation</Text>
           <Text style={styles.blockedText}>
             {profile ? 'Votre compte a été désactivé.' : "Votre profil n'est pas encore configuré."} Contactez un administrateur de BAT & PREFAB.
           </Text>
-          <Button label="Se déconnecter" variant="accent" onPress={signOut} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
+          <Button label="Se déconnecter" onPress={signOut} style={{ marginTop: spacing.xl, alignSelf: 'stretch' }} />
         </View>
       ) : null}
     </>
@@ -46,7 +49,6 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="light" />
         <Gate />
       </AuthProvider>
     </SafeAreaProvider>
@@ -54,7 +56,7 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.steel, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
-  blockedTitle: { ...font.title, color: '#FFFFFF', marginTop: spacing.xl, textAlign: 'center' },
-  blockedText: { ...font.body, color: '#B8C4CE', marginTop: spacing.sm, textAlign: 'center', lineHeight: 22 },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  blockedTitle: { ...font.display, color: colors.text, marginTop: spacing.xl, textAlign: 'center' },
+  blockedText: { ...font.body, color: colors.muted, marginTop: spacing.sm, textAlign: 'center', lineHeight: 22 },
 });

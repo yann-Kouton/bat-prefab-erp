@@ -62,7 +62,7 @@ export function Screen({ title, subtitle, back, right, scroll = true, padded = t
 /* ------------------------------------------------------------------ Boutons */
 
 export function IconButton({
-  name, onPress, color = colors.steel, size = 24, label,
+  name, onPress, color = colors.brand, size = 24, label,
 }: { name: IconName; onPress: () => void; color?: string; size?: number; label: string }) {
   return (
     <Pressable
@@ -109,9 +109,9 @@ export function Button({
 }
 
 const buttonVariants: Record<ButtonVariant, { bg: string; fg: string; border: string }> = {
-  primary: { bg: colors.steel, fg: '#FFFFFF', border: colors.steel },
-  accent: { bg: colors.machine, fg: colors.steel, border: colors.machine },
-  secondary: { bg: colors.surface, fg: colors.steel, border: colors.border },
+  primary: { bg: colors.brand, fg: '#FFFFFF', border: colors.brand },
+  accent: { bg: colors.gold, fg: colors.brand, border: colors.gold },
+  secondary: { bg: colors.surface, fg: colors.brand, border: colors.border },
   danger: { bg: colors.surface, fg: colors.danger, border: colors.danger },
 };
 
@@ -123,7 +123,7 @@ export function Fab({ onPress, icon = 'add', label }: { onPress: () => void; ico
       accessibilityLabel={label}
       style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
     >
-      <Ionicons name={icon} size={28} color={colors.steel} />
+      <Ionicons name={icon} size={28} color={colors.brand} />
     </Pressable>
   );
 }
@@ -146,9 +146,9 @@ export function Field({
         style={[
           styles.input,
           multiline && { minHeight: 88, paddingTop: 10, textAlignVertical: 'top' },
-          focused && { borderColor: colors.steel },
+          focused && { borderColor: colors.brand },
           error ? { borderColor: colors.danger } : null,
-          rest.editable === false && { backgroundColor: colors.concrete },
+          rest.editable === false && { backgroundColor: colors.canvas },
           style,
         ]}
       />
@@ -226,7 +226,7 @@ const toneColors: Record<Tone, { bg: string; fg: string }> = {
   neutral: { bg: colors.neutralSoft, fg: colors.text },
   info: { bg: colors.infoSoft, fg: colors.info },
   success: { bg: colors.successSoft, fg: colors.success },
-  warning: { bg: colors.machineSoft, fg: '#6B5200' },
+  warning: { bg: colors.goldSoft, fg: colors.warningText },
   danger: { bg: colors.dangerSoft, fg: colors.danger },
 };
 
@@ -270,7 +270,7 @@ export function EmptyState({ icon, title, text, action }: { icon: IconName; titl
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={30} color={colors.steel} />
+        <Ionicons name={icon} size={30} color={colors.brand} />
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {text ? <Text style={styles.emptyText}>{text}</Text> : null}
@@ -282,7 +282,7 @@ export function EmptyState({ icon, title, text, action }: { icon: IconName; titl
 export function Loading() {
   return (
     <View style={[styles.empty, { paddingVertical: spacing.xxl * 2 }]}>
-      <ActivityIndicator size="large" color={colors.steel} />
+      <ActivityIndicator size="large" color={colors.brand} />
     </View>
   );
 }
@@ -291,18 +291,18 @@ export function Loading() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  screen: { flex: 1, backgroundColor: colors.concrete },
-  headerWrap: { backgroundColor: colors.steel },
+  screen: { flex: 1, backgroundColor: colors.canvas },
+  headerWrap: { backgroundColor: colors.brand },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.md, minHeight: 60, gap: spacing.sm },
   headerText: { flex: 1 },
-  headerTitle: { ...font.title, color: '#FFFFFF' },
-  headerSubtitle: { ...font.small, color: '#B8C4CE', marginTop: 2 },
+  headerTitle: { ...font.display, color: '#FFFFFF' },
+  headerSubtitle: { ...font.small, color: colors.onBrandMuted, marginTop: 2 },
   content: { padding: spacing.lg },
   footer: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm },
   iconButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   button: { minHeight: 48, borderRadius: radius.input, borderWidth: 1, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   buttonText: { fontSize: 15, fontWeight: '700' },
-  fab: { position: 'absolute', right: spacing.lg, bottom: spacing.lg, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.machine, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
+  fab: { position: 'absolute', right: spacing.lg, bottom: spacing.lg, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
   fieldWrap: { marginBottom: spacing.lg },
   label: { ...font.small, fontWeight: '600', color: colors.text, marginBottom: 6 },
   input: { minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: radius.input, backgroundColor: colors.surface, paddingHorizontal: 12, fontSize: 15, color: colors.text },
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   hint: { ...font.small, color: colors.muted, marginTop: 4 },
   chipRow: { flexDirection: 'row', gap: spacing.sm },
   chip: { paddingHorizontal: 14, minHeight: 36, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  chipSelected: { backgroundColor: colors.steel, borderColor: colors.steel },
+  chipSelected: { backgroundColor: colors.brand, borderColor: colors.brand },
   chipText: { ...font.small, fontWeight: '600', color: colors.text },
   search: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.input, paddingHorizontal: 12, gap: 8 },
   searchInput: { flex: 1, minHeight: 44, fontSize: 15, color: colors.text },
@@ -323,9 +323,9 @@ const styles = StyleSheet.create({
   infoLabel: { ...font.small, color: colors.muted, flexShrink: 0 },
   infoValue: { ...font.body, color: colors.text, flex: 1, textAlign: 'right' },
   track: { height: 8, borderRadius: radius.pill, backgroundColor: colors.neutralSoft, overflow: 'hidden' },
-  trackFill: { height: 8, borderRadius: radius.pill, backgroundColor: colors.machine },
+  trackFill: { height: 8, borderRadius: radius.pill, backgroundColor: colors.gold },
   empty: { alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl },
-  emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.machineSoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
+  emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.goldSoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
   emptyTitle: { ...font.heading, color: colors.text, textAlign: 'center' },
   emptyText: { ...font.body, color: colors.muted, textAlign: 'center', marginTop: 6, lineHeight: 21 },
 });

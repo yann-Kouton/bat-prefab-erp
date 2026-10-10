@@ -54,3 +54,12 @@ export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 }
+
+/** Ajoute des jours à une date AAAA-MM-JJ (ou à aujourd'hui) et renvoie une date AAAA-MM-JJ. */
+export function addDaysISO(days: number, from: string = todayISO()): string {
+  const d = new Date(from + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}

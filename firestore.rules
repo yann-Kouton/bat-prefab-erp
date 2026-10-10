@@ -9,10 +9,19 @@ service cloud.firestore {
     function hasRole(roles) { return isActive() && get(profilePath()).data.role in roles; }
 
     // Garder synchronisé avec src/services/permissions.ts
-    function canWriteClients()  { return hasRole(['admin', 'direction', 'commercial']); }
-    function canReadQuotes()    { return hasRole(['admin', 'direction', 'commercial', 'comptable']); }
-    function canWriteProjects() { return hasRole(['admin', 'direction', 'commercial', 'chef_chantier']); }
-    function canWriteDocs()     { return hasRole(['admin', 'direction', 'chef_chantier']); }
+    function canWriteClients()   { return hasRole(['admin', 'direction', 'commercial']); }
+    function canReadQuotes()     { return hasRole(['admin', 'direction', 'commercial', 'comptable']); }
+    function canWriteProjects()  { return hasRole(['admin', 'direction', 'commercial', 'chef_chantier']); }
+    function canWriteDocs()      { return hasRole(['admin', 'direction', 'chef_chantier']); }
+    function canWriteLogs()      { return hasRole(['admin', 'direction', 'chef_chantier']); }
+    function canReadExpenses()   { return hasRole(['admin', 'direction', 'comptable', 'chef_chantier']); }
+    function canWriteExpenses()  { return hasRole(['admin', 'direction', 'comptable', 'chef_chantier']); }
+    function canReadStock()      { return hasRole(['admin', 'direction', 'chef_chantier', 'magasinier', 'comptable']); }
+    function canWriteStock()     { return hasRole(['admin', 'direction', 'magasinier']); }
+    function canReadPurchases()  { return hasRole(['admin', 'direction', 'comptable', 'magasinier']); }
+    function canWritePurchases() { return hasRole(['admin', 'direction', 'magasinier']); }
+    function canReadInvoices()   { return hasRole(['admin', 'direction', 'comptable', 'commercial']); }
+    function canWriteInvoices()  { return hasRole(['admin', 'direction', 'comptable']); }
 
     // --- Utilisateurs ------------------------------------------------------
     // Création/modification réservées aux administrateurs (ou à l'API serveur, qui contourne les règles).
@@ -46,14 +55,90 @@ service cloud.firestore {
         allow read: if isActive();
         allow create, update, delete: if canWriteDocs();
       }
+
+      // Journal de chantier : un rapport par jour, jamais supprimé par un chef de chantier
+      match /dailyLogs/{logId} {
+        allow read: if isActive();
+        allow create, update: if canWriteLogs();
+        allow delete: if hasRole(['admin', 'direction']);
+      }
+
+      // Dépenses réelles du chantier (comparées au budget)
+      match /expenses/{expenseId} {
+        allow read: if canReadExpenses();
+        allow create, update: if canWriteExpenses();
+        allow delete: if hasRole(['admin', 'direction', 'comptable']);
+      }
+
+      // Trésorerie du chantier : entrées (argent reçu) et décaissements (argent sorti).
+      // Les décaissements : mêmes droits que les dépenses. Les entrées : admin, direction, comptable.
+      match /cashflows/{flowId} {
+        allow read: if canReadExpenses();
+        allow create: if canWriteExpenses()
+                      && (request.resource.data.type == 'decaissement' || hasRole(['admin', 'direction', 'comptable']));
+        allow update: if false;
+        allow delete: if hasRole(['admin', 'direction', 'comptable']);
+      }
+    }
+
+    // --- Fournisseurs & achats ----------------------------------------------
+    match /suppliers/{id} {
+      allow read: if canReadPurchases();
+      allow create, update: if canWritePurchases();
+      allow delete: if hasRole(['admin', 'direction']);
+    }
+    match /purchaseOrders/{id} {
+      allow read: if canReadPurchases();
+      allow create: if canWritePurchases() && request.resource.data.status == 'brouillon';
+      // Valider (brouillon -> commande) ou annuler : admin / direction. Réceptionner (commande -> recu) : tout acteur des achats.
+      allow update: if canWritePurchases() && (
+        request.resource.data.status == resource.data.status
+        || (resource.data.status == 'commande' && request.resource.data.status == 'recu')
+        || hasRole(['admin', 'direction'])
+      );
+      allow delete: if hasRole(['admin', 'direction']) && resource.data.status == 'brouillon';
+    }
+
+    // --- Stock ---------------------------------------------------------------
+    match /products/{id} {
+      allow read: if canReadStock();
+      allow create, update: if canWriteStock();
+      allow delete: if hasRole(['admin', 'direction']);
+    }
+    // Registre des mouvements : on ajoute, on ne modifie ni ne supprime jamais.
+    match /stockMovements/{id} {
+      allow read: if canReadStock();
+      allow create: if canWriteStock();
+      allow update, delete: if false;
+    }
+
+    // --- Facturation ---------------------------------------------------------
+    // Une facture ne se supprime pas : on l'annule (statut « annulee »).
+    match /invoices/{id} {
+      allow read: if canReadInvoices();
+      allow create, update: if canWriteInvoices();
+      allow delete: if false;
+    }
+    match /payments/{id} {
+      allow read: if canReadInvoices();
+      allow create: if canWriteInvoices();
+      allow update: if false;
+      allow delete: if hasRole(['admin']);
     }
 
     // --- Compteurs de numérotation (DEV-2026-0001…) -------------------------
-    // Phase 1 : écriture côté client dans une transaction. À migrer vers une API serveur
-    // si vous voulez empêcher toute manipulation manuelle des compteurs.
+    // Écriture côté client dans une transaction, mais verrouillée : un compteur ne peut que
+    // démarrer à 1 puis augmenter de 1, donc impossible de le remettre à zéro ou de créer un doublon.
+    // Phase suivante : migrer vers une API serveur si vous voulez supprimer tout accès client.
     match /counters/{id} {
       allow read: if isActive();
-      allow write: if canWriteProjects() || canWriteClients();
+      allow create: if (canWriteProjects() || canWriteClients() || canWritePurchases() || canWriteInvoices())
+                    && request.resource.data.keys().hasOnly(['value'])
+                    && request.resource.data.value == 1;
+      allow update: if (canWriteProjects() || canWriteClients() || canWritePurchases() || canWriteInvoices())
+                    && request.resource.data.keys().hasOnly(['value'])
+                    && request.resource.data.value == resource.data.value + 1;
+      allow delete: if false;
     }
 
     // Tout le reste est interdit

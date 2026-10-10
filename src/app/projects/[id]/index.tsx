@@ -6,6 +6,8 @@ import { COUNTRIES, PROJECT_STATUS_LABELS, PROJECT_STATUS_OPTIONS, PROJECT_TYPE_
 import { errorMessage, notify } from '@/lib/dialogs';
 import { formatDate, formatMoney } from '@/lib/format';
 import { PROJECT_TONES } from '@/lib/tones';
+import { ProjectExpenses } from '@/features/projects/ProjectExpenses';
+import { ProjectLogs } from '@/features/projects/ProjectLogs';
 import { ProjectPhotos } from '@/features/projects/ProjectPhotos';
 import { updateDocument, useDocument } from '@/services/firestore';
 import { colors, font, spacing } from '@/theme';
@@ -90,6 +92,8 @@ export default function ProjectDetail() {
         <Button label="Voir le devis d'origine" icon="document-text-outline" variant="secondary" onPress={() => router.push(`/quotes/${project.quoteId}`)} style={{ marginBottom: spacing.md }} />
       ) : null}
 
+      <ProjectLogs projectId={project.id} />
+      <ProjectExpenses project={project} />
       <ProjectPhotos projectId={project.id} />
     </Screen>
   );

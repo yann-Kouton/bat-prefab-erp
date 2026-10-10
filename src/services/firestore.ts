@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import {
-  addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, updateDoc,
+  addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, updateDoc, where,
+  type WhereFilterOp,
 } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 type WithId<T> = T & { id: string };
 
 /** Abonnement temps réel à une collection (ou sous-collection : "projects/abc/documents"). */
-export function useCollection<T>(path: string, options: { enabled?: boolean; orderField?: string | null } = {}) {
+export function useCollection<T>(
+  path: string,
+  options: { enabled?: boolean; orderField?: string | null; where?: [string, WhereFilterOp, unknown] } = {},
+) {
   const { enabled = true, orderField = 'createdAt' } = options;
+  // Un filtre `where` combiné à orderBy exigerait un index composite : avec un filtre, on trie côté client.
+  const filter = options.where;
+  const filterKey = filter ? JSON.stringify(filter) : '';
   const [data, setData] = useState<WithId<T>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +28,9 @@ export function useCollection<T>(path: string, options: { enabled?: boolean; ord
     }
     setLoading(true);
     const ref = collection(db, path);
-    const q = orderField ? query(ref, orderBy(orderField, 'desc')) : query(ref);
+    const q = filter
+      ? query(ref, where(filter[0], filter[1], filter[2]))
+      : orderField ? query(ref, orderBy(orderField, 'desc')) : query(ref);
     return onSnapshot(
       q,
       (snap) => {
@@ -34,7 +43,8 @@ export function useCollection<T>(path: string, options: { enabled?: boolean; ord
         setLoading(false);
       },
     );
-  }, [path, enabled, orderField]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, enabled, orderField, filterKey]);
 
   return { data, loading, error };
 }
@@ -86,7 +96,7 @@ export async function removeDocument(path: string, id: string): Promise<void> {
  * Numéro de document séquentiel par année : DEV-2026-0001, PRJ-2026-0001…
  * Incrémenté dans une transaction pour éviter les doublons.
  */
-export async function nextNumber(prefix: 'DEV' | 'PRJ' | 'FAC'): Promise<string> {
+export async function nextNumber(prefix: 'DEV' | 'PRJ' | 'FAC' | 'BC'): Promise<string> {
   const year = new Date().getFullYear();
   const ref = doc(db, 'counters', `${prefix}_${year}`);
   const value = await runTransaction(db, async (tx) => {
