@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Aides -------------------------------------------------------------
+    function signedIn() { return request.auth != null; }
+    function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function isActive()    { return signedIn() && exists(profilePath()) && get(profilePath()).data.active == true; }
+    function hasRole(roles) { return isActive() && get(profilePath()).data.role in roles; }
+
+    // Garder synchronisé avec src/services/permissions.ts
+    function canWriteClients()  { return hasRole(['admin', 'direction', 'commercial']); }
+    function canReadQuotes()    { return hasRole(['admin', 'direction', 'commercial', 'comptable']); }
+    function canWriteProjects() { return hasRole(['admin', 'direction', 'commercial', 'chef_chantier']); }
+    function canWriteDocs()     { return hasRole(['admin', 'direction', 'chef_chantier']); }
+
+    // --- Utilisateurs ------------------------------------------------------
+    // Création/modification réservées aux administrateurs (ou à l'API serveur, qui contourne les règles).
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || hasRole(['admin']));
+      allow list: if hasRole(['admin']);
+      allow write: if hasRole(['admin']);
+    }
+
+    // --- Clients -----------------------------------------------------------
+    match /clients/{id} {
+      allow read: if isActive();
+      allow create, update: if canWriteClients();
+      allow delete: if hasRole(['admin', 'direction']);
+    }
+
+    // --- Devis -------------------------------------------------------------
+    match /quotes/{id} {
+      allow read: if canReadQuotes();
+      allow create, update: if canWriteClients();
+      allow delete: if hasRole(['admin', 'direction']);
+    }
+
+    // --- Projets -----------------------------------------------------------
+    match /projects/{id} {
+      allow read: if isActive();
+      allow create, update: if canWriteProjects();
+      allow delete: if hasRole(['admin']);
+
+      match /documents/{docId} {
+        allow read: if isActive();
+        allow create, update, delete: if canWriteDocs();
+      }
+    }
+
+    // --- Compteurs de numérotation (DEV-2026-0001…) -------------------------
+    // Phase 1 : écriture côté client dans une transaction. À migrer vers une API serveur
+    // si vous voulez empêcher toute manipulation manuelle des compteurs.
+    match /counters/{id} {
+      allow read: if isActive();
+      allow write: if canWriteProjects() || canWriteClients();
+    }
+
+    // Tout le reste est interdit
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
